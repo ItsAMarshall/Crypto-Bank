@@ -2,6 +2,9 @@
 	@file atm.cpp
 	@brief Top level ATM implementation file
  */
+#include <string>
+#include <iostream>
+#include <cassert>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -12,26 +15,9 @@
 #include <string.h>
 #include <ctype.h>
 
+using namespace std;
+
 void withdraw_function() {
-	char buffer[50];
-	int i, val, len, maxlen;
-	maxlen = 10;
-	printf("enter number: ");
-	fgets( buffer, 50, stdin );
-	len = strlen(buffer) - 1;  // because buffer includes a newline char
-	if( len > maxlen ) { 
-		printf( "too long\n" );
-		return;
-	}
-	for( i = 0; i < len; ++i ) {
-		if(  !isdigit( buffer[i] ) ) {
-			printf( "invalid input\n" );
-			return;
-		}
-	}
-	val = atoi(buffer);
-  	printf( "you entered %d\n", val);
-	return;
 }
 
 
@@ -67,6 +53,7 @@ int main(int argc, char* argv[])
 	
 	//input loop
 	char buf[80];
+	string input;
 	while(1)
 	{
 		printf("atm> ");
@@ -76,17 +63,34 @@ int main(int argc, char* argv[])
 		//TODO: your input parsing code has to put data here
 		char packet[1024];
 		int length = 1;
-		
+		//char command[8];
+		//strncpy(command, buf, 8);
 		//input parsing
+		//printf("%s", input);
 		if(!strcmp(buf, "logout"))
 			break;
 		else if(!strcmp(buf, "withdraw")) {
+			//takes in withdraw [amount]
 			printf("Withdrawing\n");
-			withdraw_function();
+		}
+		else if(!strcmp(buf, "login")) {
+			//takes in login [username]
+			//prompt for PIN
+			printf("Logging in\n");
+		}
+		else if(!strcmp(buf, "balance")) {
+			printf("Checking Balance\n");
+		}
+		else if(!strcmp(buf, "transfer")) {
+			//takes in transfer [amount] [username]
+			printf("Transfering\n");
+		}
+		else {
+			printf("invalid input.  Valid operations are:\n \
+login | withdraw | balance | transfer | logout\n");
 		}
 
-		else if(!strcmp(buf, "deposit"))
-			printf("depositing\n");
+
 		//TODO: other commands
 		
 		//send the packet through the proxy to the bank
