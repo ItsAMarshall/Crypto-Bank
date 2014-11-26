@@ -14,9 +14,15 @@
 
 #include <string>
 #include <iostream>
+#include <map>
+
+#include "account.h"
 
 void* client_thread(void* arg);
 void* console_thread(void* arg);
+void setup_accounts();
+
+std::map<std::string, Account>* accounts;
 
 int main(int argc, char* argv[])
 {
@@ -25,6 +31,8 @@ int main(int argc, char* argv[])
 		printf("Usage: bank listen-port\n");
 		return -1;
 	}
+
+  setup_accounts();
 	
 	unsigned short ourport = atoi(argv[1]);
 	
@@ -168,4 +176,12 @@ void* console_thread(void* arg)
       std::cerr << "Unknown command\n";
     }
 	}
+}
+
+void setup_accounts()
+{
+  accounts = new std::map<std::string, Account>();
+  accounts->insert(std::make_pair("Alice", Account("Alice", "1234", 100)));
+  accounts->insert(std::make_pair("Bob", Account("Bob", "7373", 50)));
+  accounts->insert(std::make_pair("Eve", Account("Eve", "1337", 0)));
 }

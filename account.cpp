@@ -12,34 +12,14 @@ Account::Account(std::string a_username, std::string a_pin, double a_balance)
   balance = a_balance;
 }
 
-bool Account::get_balance(std::string a_pin, double& a_balance)
+double Account::get_balance()
 {
-  if (!validate(a_pin))
-  {
-    return false;
-  }
-
-  a_balance = balance;
-
-  return true;
+  return balance;
 }
 
-bool Account::sufficient_funds(std::string a_pin, double amount, bool& sufficient)
+bool Account::withdraw(double amount)
 {
-  if (!validate(a_pin))
-  {
-    return false;
-  }
-
-  sufficient = (amount <= balance);
-
-  return true;
-}
-
-bool Account::withdraw(std::string a_pin, double amount)
-{
-  bool sufficient;
-  if (!sufficient_funds(a_pin, amount, sufficient) || !sufficient)
+  if (amount > balance)
   {
     return false;
   }

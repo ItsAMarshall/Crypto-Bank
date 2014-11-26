@@ -10,14 +10,12 @@ class Account
   std::string pin;
   double balance;
 
-  bool validate(std::string a_pin);
-
   public:
   Account(std::string a_username, std::string a_pin, double a_balance);
 
-  bool get_balance(std::string a_pin, double& a_balance);
-  bool sufficient_funds(std::string a_pin, double amount, bool& sufficient);
-  bool withdraw(std::string a_pin, double amount);
+  bool validate(std::string a_pin);
+  double get_balance();
+  bool withdraw(double amount);
   void deposit(double amount);
 };
 
