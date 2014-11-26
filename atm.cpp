@@ -10,6 +10,30 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
+
+void withdraw_function() {
+	char buffer[50];
+	int i, val, len, maxlen;
+	maxlen = 10;
+	printf("enter number: ");
+	fgets( buffer, 50, stdin );
+	len = strlen(buffer) - 1;  // because buffer includes a newline char
+	if( len > maxlen ) { 
+		printf( "too long\n" );
+		return;
+	}
+	for( i = 0; i < len; ++i ) {
+		if(  !isdigit( buffer[i] ) ) {
+			printf( "invalid input\n" );
+			return;
+		}
+	}
+	val = atoi(buffer);
+  	printf( "you entered %d\n", val);
+	return;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -56,6 +80,13 @@ int main(int argc, char* argv[])
 		//input parsing
 		if(!strcmp(buf, "logout"))
 			break;
+		else if(!strcmp(buf, "withdraw")) {
+			printf("Withdrawing\n");
+			withdraw_function();
+		}
+
+		else if(!strcmp(buf, "deposit"))
+			printf("depositing\n");
 		//TODO: other commands
 		
 		//send the packet through the proxy to the bank
