@@ -157,19 +157,41 @@ void* console_thread(void* arg)
         std::cerr << "Malformed command\n";
         continue;
       }
-      std::string username = input.substr(first_space + 1, second_space - first_space);
+      std::string username = input.substr(first_space + 1, second_space - first_space - 1);
 
       std::string amount_string = input.substr(second_space + 1,
         input.length() - second_space);
-      //TODO: parse number
-      //TODO: do deposit
+      double amount = atof(amount_string.c_str());
+      if (amount <= 0)
+      {
+        std::cerr << "Invlaid deposit amount\n";
+        continue;
+      }
+
+      std::map<std::string, Account>::iterator it;
+      it = accounts->find(username);
+      if (it == accounts->end())
+      {
+        std::cerr << "No such account\n";
+        continue;
+      }
+      it->second.deposit(amount);
     }
 
     //BALANCE
     else if (command == "balance")
     {
       std::string username = input.substr(first_space + 1, input.length() - first_space);
-      //TODO: show balance
+      
+      std::map<std::string, Account>::iterator it;
+      it = accounts->find(username);
+      if (it == accounts->end())
+      {
+        std::cerr << "No such account\n";
+        continue;
+      }
+
+      std::cout << it->second.get_balance() << std::endl;
     }
     else
     {

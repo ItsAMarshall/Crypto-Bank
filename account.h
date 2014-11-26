@@ -11,6 +11,7 @@ class Account
   double balance;
 
   public:
+  Account();
   Account(std::string a_username, std::string a_pin, double a_balance);
 
   bool validate(std::string a_pin);
