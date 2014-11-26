@@ -57,33 +57,45 @@ int main(int argc, char* argv[])
 	while(1)
 	{
 		printf("atm> ");
-		fgets(buf, 79, stdin);
-		buf[strlen(buf)-1] = '\0';	//trim off trailing newline
-		
+		//fgets(buf, 79, stdin);
+		//buf[strlen(buf)-1] = '\0';	//trim off trailing newline
+		getline(cin, input);
 		//TODO: your input parsing code has to put data here
 		char packet[1024];
 		int length = 1;
 		//char command[8];
 		//strncpy(command, buf, 8);
+
 		//input parsing
-		//printf("%s", input);
-		if(!strcmp(buf, "logout"))
+		printf("%s\n", input.c_str());
+		if(input.find("logout") == 0)
 			break;
-		else if(!strcmp(buf, "withdraw")) {
+		else if(input.find("withdraw ") == 0) {
 			//takes in withdraw [amount]
-			printf("Withdrawing\n");
+			int sec_space = input.find(" ", 9);
+			string temp = input.substr(9, sec_space);
+
+			printf("%s withdrawn.\n", temp.c_str());
 		}
-		else if(!strcmp(buf, "login")) {
+		else if(input.find("login ") == 0) {
 			//takes in login [username]
 			//prompt for PIN
-			printf("Logging in\n");
+			int sec_space = input.find(" ", 6);
+			string temp = input.substr(6, sec_space);
+
+			printf("User %s is logging in.\n", temp.c_str());
 		}
-		else if(!strcmp(buf, "balance")) {
+		else if(input.find("balance") == 0) {
 			printf("Checking Balance\n");
 		}
-		else if(!strcmp(buf, "transfer")) {
+		else if(input.find("transfer ") == 0) {
 			//takes in transfer [amount] [username]
-			printf("Transfering\n");
+			int space = input.find(" ", 9);
+			string amount = input.substr(9, (space-9));
+			printf("amount %s\n", amount.c_str());
+			space = input.find(" ", 9+amount.size());
+			string destination = input.substr(space+1);
+			printf("Transfering %s to %s.\n", amount.c_str(), destination.c_str());
 		}
 		else {
 			printf("invalid input.  Valid operations are:\n \
