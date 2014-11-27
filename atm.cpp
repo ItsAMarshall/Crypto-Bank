@@ -2,9 +2,12 @@
 	@file atm.cpp
 	@brief Top level ATM implementation file
  */
+<<<<<<< HEAD
 #include <string>
 #include <iostream>
 #include <cassert>
+=======
+>>>>>>> FETCH_HEAD
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -13,6 +16,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+<<<<<<< HEAD
 #include <ctype.h>
 
 using namespace std;
@@ -20,6 +24,8 @@ using namespace std;
 void withdraw_function() {
 }
 
+=======
+>>>>>>> FETCH_HEAD
 
 int main(int argc, char* argv[])
 {
@@ -53,6 +59,7 @@ int main(int argc, char* argv[])
 	
 	//input loop
 	char buf[80];
+<<<<<<< HEAD
 	string input;
 	while(1)
 	{
@@ -103,6 +110,21 @@ login | withdraw | balance | transfer | logout\n");
 		}
 
 
+=======
+	while(1)
+	{
+		printf("atm> ");
+		fgets(buf, 79, stdin);
+		buf[strlen(buf)-1] = '\0';	//trim off trailing newline
+		
+		//TODO: your input parsing code has to put data here
+		char packet[1024];
+		int length = 1;
+		
+		//input parsing
+		if(!strcmp(buf, "logout"))
+			break;
+>>>>>>> FETCH_HEAD
 		//TODO: other commands
 		
 		//send the packet through the proxy to the bank
