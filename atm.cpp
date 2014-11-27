@@ -17,7 +17,51 @@
 
 using namespace std;
 
-void withdraw_function() {
+void withdraw_function(string& input, char packet[]) {
+
+	int sec_space = input.find(" ", 9);
+	string temp = input.substr(9, sec_space);
+
+	printf("%s withdrawn.\n", temp.c_str());
+
+	for(unsigned int i = 0; i < input.size(); ++i) {
+		packet[i] = input[i];
+	}
+	return;
+}
+
+void login_function(string& input, char packet[]) {
+	//Get PIN from Bank
+	//prompt for PIN
+	int sec_space = input.find(" ", 6);
+	string temp = input.substr(6, sec_space);
+
+	printf("User %s is logging in.\n", temp.c_str());
+
+	for(unsigned int i = 0; i < input.size(); ++i) {
+		packet[i] = input[i];
+	}
+	return;
+}
+
+void balance_function(string& input, char packet[]) {
+	printf("Checking Balance\n");
+	for(unsigned int i = 0; i < input.size(); ++i) {
+		packet[i] = input[i];
+	}
+}
+
+void transfer_function(string& input, char packet[]) {
+	int space = input.find(" ", 9);
+	string amount = input.substr(9, (space-9));
+	printf("amount %s\n", amount.c_str());
+	space = input.find(" ", 9+amount.size());
+	string destination = input.substr(space+1);
+	printf("Transfering %s to %s.\n", amount.c_str(), destination.c_str());
+
+	for(unsigned int i = 0; i < input.size(); ++i) {
+		packet[i] = input[i];
+	}
 }
 
 int main(int argc, char* argv[])
@@ -66,52 +110,23 @@ int main(int argc, char* argv[])
 		//strncpy(command, buf, 8);
 
 		//input parsing
-		printf("%s\n", input.c_str());
 		if(input.find("logout") == 0)
 			break;
 		else if(input.find("withdraw ") == 0) {
 			//takes in withdraw [amount]
-			int sec_space = input.find(" ", 9);
-			string temp = input.substr(9, sec_space);
-
-			printf("%s withdrawn.\n", temp.c_str());
-
-			for(unsigned int i = 0; i < input.size(); ++i) {
-				packet[i] = input[i];
-			}
+			withdraw_function(input, packet);
 		}
 		else if(input.find("login ") == 0) {
 			//takes in login [username]
-			//Get PIN from Bank
-			//prompt for PIN
-			int sec_space = input.find(" ", 6);
-			string temp = input.substr(6, sec_space);
-
-			printf("User %s is logging in.\n", temp.c_str());
-
-			for(unsigned int i = 0; i < input.size(); ++i) {
-				packet[i] = input[i];
-			}
+			login_function(input, packet);
 
 		}
 		else if(input.find("balance") == 0) {
-			printf("Checking Balance\n");
-			for(unsigned int i = 0; i < input.size(); ++i) {
-				packet[i] = input[i];
-			}
+			balance_function(input, packet);
 		}
 		else if(input.find("transfer ") == 0) {
 			//takes in transfer [amount] [username]
-			int space = input.find(" ", 9);
-			string amount = input.substr(9, (space-9));
-			printf("amount %s\n", amount.c_str());
-			space = input.find(" ", 9+amount.size());
-			string destination = input.substr(space+1);
-			printf("Transfering %s to %s.\n", amount.c_str(), destination.c_str());
-
-			for(unsigned int i = 0; i < input.size(); ++i) {
-				packet[i] = input[i];
-			}
+			transfer_function(input, packet);
 		}
 		else {
 			printf("invalid input.  Valid operations are:\n \
