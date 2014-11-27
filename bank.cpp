@@ -87,7 +87,9 @@ void* client_thread(void* arg)
 	
 	printf("[bank] client ID #%d connected\n", csock);
 	bool withdraw_, balance_, login_, transfer_;
-	std::string user_, amount_;
+  bool mid_login = false, validated = false;
+	std::string user_, amount_, pin_;
+  std::map<std::string, Account>::iterator active_account = accounts->end();
 	//input loop
 	int length;
 	char packet[1024];
@@ -114,28 +116,32 @@ void* client_thread(void* arg)
 		//convert packet to string to be parsed
 		std::string str(packet);
 
-		//TODO: process packet data
-		
-		if(str.find("withdraw ") == 0) {
+		//determine the command type
+
+    //if we're mid-login, this is the pin
+    if (mid_login) {
+      pin_ = str;
+    }
+		else if(str.find("withdraw ") == 0) {
 			//takes in withdraw [amount]
 			int sec_space = str.find(" ", 9);
 			std::string temp = str.substr(9, sec_space);
 
-			printf("%s withdrawn.\n", temp.c_str());
+			//printf("%s withdrawn.\n", temp.c_str());
 			withdraw_ = true;
 			// user_ = somewhere in packet
 		}
 		else if(str.find("login ") == 0) {
-			//takes in login [username]
+			//takes in login [username] [pin]
 			//Get PIN from Bank
 			//prompt for PIN
 			int sec_space = str.find(" ", 6);
-			std::string temp = str.substr(6, sec_space);
+			user_ = str.substr(6, sec_space);
 
-			printf("User %s is logging in.\n", temp.c_str());
+			printf("User %s is logging in.\n", user_.c_str());
+      printf("Pin %s\n", pin_.c_str());
 
 			login_ = true;
-			user_ = temp;
 		}
 		else if(str.find("balance") == 0) {
 			printf("Checking Balance\n");
@@ -149,35 +155,44 @@ void* client_thread(void* arg)
 			printf("amount %s\n", amount.c_str());
 			space = str.find(" ", 9+amount.size());
 			std::string destination = str.substr(space+1);
-			printf("Transfering %s to %s.\n", amount.c_str(), destination.c_str());
+			//printf("Transfering %s to %s.\n", amount.c_str(), destination.c_str());
 			
 			transfer_ = true;
 			user_ = destination;
 			amount_ = amount;
 		}
 
-		//TODO: put new data in packet
 		for(unsigned int i = 0; i < length; ++i) {
 			packet[i] = '\0';
 		}
 
+    // -1 for non-existent account, 0 for continue
 		if(login_) {
-			std::map<std::string, Account>::iterator it;
-	      	it = accounts->find(user_);
-	      	if (it == accounts->end())
-	      	{
-	        	std::cerr << "No such account\n";
-	        	packet[0] = '-';
-	        	packet[1] = '1';
-	      	}
-	      	else {
-		     	std::string pin = it->second.get_pin();
-		     	for( unsigned int i = 0; i < 4; ++i ) {
-		     		packet[i] = pin[i];
-		     	}
-	     	}
+      active_account = accounts->find(user_);
+      if (active_account == accounts->end())
+      {
+        std::cerr << "No such account\n";
+        packet[0] = '-';
+        packet[1] = '1';
+      }
+      else {
+        packet[0] = '0';
+        mid_login = true;
+      }
 		}
-
+    // -1 for bad pin, 0 for success
+    else if(mid_login) {
+      mid_login = false;
+      if (active_account->second.validate(pin_)) {
+        validated = true;
+        packet[0] = '0';
+      }
+      else {
+        active_account = accounts->end();
+        packet[0] = '-';
+        packet[1] = '1';
+      }
+    }
 
 
 		//send the new packet back to the client
