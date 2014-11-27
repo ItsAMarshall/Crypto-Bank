@@ -146,6 +146,10 @@ login | withdraw | balance | transfer | logout\n");
 			printf("fail to read packet\n");
 			break;
 		}
+
+		string str(packet);
+		cout << str << endl;
+
 		for(unsigned int i = 0; i < input.size(); ++i) {
 			packet[i] = '\0';
 		}

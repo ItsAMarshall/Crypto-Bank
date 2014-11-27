@@ -18,6 +18,7 @@ class Account
   double get_balance();
   bool withdraw(double amount);
   void deposit(double amount);
+  std::string get_pin();
 };
 
 #endif

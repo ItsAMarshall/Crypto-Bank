@@ -86,12 +86,17 @@ void* client_thread(void* arg)
 	int csock = (int)arg;
 	
 	printf("[bank] client ID #%d connected\n", csock);
-	
+	bool withdraw_, balance_, login_, transfer_;
+	std::string user_, amount_;
 	//input loop
 	int length;
 	char packet[1024];
 	while(1)
 	{
+		withdraw_ = false;
+		balance_ = false;
+		login_ = false;
+		transfer_ = false;
 		//read the packet from the ATM
 		if(sizeof(int) != recv(csock, &length, sizeof(int), 0))
 			break;
@@ -106,12 +111,75 @@ void* client_thread(void* arg)
 			break;
 		}
 		
+		//convert packet to string to be parsed
 		std::string str(packet);
-		std::cout << str << std::endl;
+
 		//TODO: process packet data
 		
+		if(str.find("withdraw ") == 0) {
+			//takes in withdraw [amount]
+			int sec_space = str.find(" ", 9);
+			std::string temp = str.substr(9, sec_space);
+
+			printf("%s withdrawn.\n", temp.c_str());
+			withdraw_ = true;
+			// user_ = somewhere in packet
+		}
+		else if(str.find("login ") == 0) {
+			//takes in login [username]
+			//Get PIN from Bank
+			//prompt for PIN
+			int sec_space = str.find(" ", 6);
+			std::string temp = str.substr(6, sec_space);
+
+			printf("User %s is logging in.\n", temp.c_str());
+
+			login_ = true;
+			user_ = temp;
+		}
+		else if(str.find("balance") == 0) {
+			printf("Checking Balance\n");
+			balance_ = true;
+
+		}
+		else if(str.find("transfer ") == 0) {
+			//takes in transfer [amount] [username]
+			int space = str.find(" ", 9);
+			std::string amount = str.substr(9, (space-9));
+			printf("amount %s\n", amount.c_str());
+			space = str.find(" ", 9+amount.size());
+			std::string destination = str.substr(space+1);
+			printf("Transfering %s to %s.\n", amount.c_str(), destination.c_str());
+			
+			transfer_ = true;
+			user_ = destination;
+			amount_ = amount;
+		}
+
 		//TODO: put new data in packet
-		
+		for(unsigned int i = 0; i < length; ++i) {
+			packet[i] = '\0';
+		}
+
+		if(login_) {
+			std::map<std::string, Account>::iterator it;
+	      	it = accounts->find(user_);
+	      	if (it == accounts->end())
+	      	{
+	        	std::cerr << "No such account\n";
+	        	packet[0] = '-';
+	        	packet[1] = '1';
+	      	}
+	      	else {
+		     	std::string pin = it->second.get_pin();
+		     	for( unsigned int i = 0; i < 4; ++i ) {
+		     		packet[i] = pin[i];
+		     	}
+	     	}
+		}
+
+
+
 		//send the new packet back to the client
 		if(sizeof(int) != send(csock, &length, sizeof(int), 0))
 		{
@@ -123,9 +191,7 @@ void* client_thread(void* arg)
 			printf("[bank] fail to send packet\n");
 			break;
 		}
-		for(unsigned int i = 0; i < length; ++i) {
-			packet[i] = '\0';
-		}
+		
 	}
 
 	printf("[bank] client ID #%d disconnected\n", csock);
