@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
 		getline(cin, input);
 		//TODO: your input parsing code has to put data here
 		char packet[1024];
-		int length = 1;
+		int length = input.size();
 		//char command[8];
 		//strncpy(command, buf, 8);
 
@@ -145,6 +145,9 @@ login | withdraw | balance | transfer | logout\n");
 		{
 			printf("fail to read packet\n");
 			break;
+		}
+		for(unsigned int i = 0; i < input.size(); ++i) {
+			packet[i] = '\0';
 		}
 	}
 	

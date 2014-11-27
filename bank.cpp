@@ -106,6 +106,8 @@ void* client_thread(void* arg)
 			break;
 		}
 		
+		std::string str(packet);
+		std::cout << str << std::endl;
 		//TODO: process packet data
 		
 		//TODO: put new data in packet
@@ -121,7 +123,9 @@ void* client_thread(void* arg)
 			printf("[bank] fail to send packet\n");
 			break;
 		}
-
+		for(unsigned int i = 0; i < length; ++i) {
+			packet[i] = '\0';
+		}
 	}
 
 	printf("[bank] client ID #%d disconnected\n", csock);
