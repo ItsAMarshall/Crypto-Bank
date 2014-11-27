@@ -9,6 +9,7 @@ class Account
   std::string username;
   std::string pin;
   double balance;
+  bool logged_in;
 
   public:
   Account();
@@ -18,6 +19,7 @@ class Account
   double get_balance();
   bool withdraw(double amount);
   void deposit(double amount);
+  void logout();
 };
 
 #endif
