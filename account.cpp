@@ -25,11 +25,6 @@ double Account::get_balance()
   return balance;
 }
 
-std::string Account::get_pin()
-{
-  return pin;
-}
-
 bool Account::withdraw(double amount)
 {
   if (amount > balance)

@@ -206,6 +206,12 @@ login | withdraw | balance | transfer | logout\n");
 					break;
 				string str(packet);
 				cout << str << endl;
+        if (str[0] == '0') {
+          cout << "You are logged in\n";
+        }
+        else {
+          cout << "Failed to log in with given PIN\n";
+        }
 			}
 				//Prompt for pin
 				//Try again

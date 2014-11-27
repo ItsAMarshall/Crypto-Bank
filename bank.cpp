@@ -139,7 +139,6 @@ void* client_thread(void* arg)
 		user_ = str.substr(6, sec_space);
 
 		printf("User %s is logging in.\n", user_.c_str());
-  		printf("Pin %s\n", pin_.c_str());
 
 		login_ = true;
 	}
@@ -189,6 +188,7 @@ void* client_thread(void* arg)
         std::cout << active_account->first << " is validated." << std::endl;
       }
       else {
+        std::cout << active_account->first << " not validated; invalid pin" << std::endl;
         active_account = accounts->end();
         packet[0] = '-';
         packet[1] = '1';
