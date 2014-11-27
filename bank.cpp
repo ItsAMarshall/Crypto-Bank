@@ -12,8 +12,17 @@
 #include <pthread.h>
 #include <string.h>
 
+#include <string>
+#include <iostream>
+#include <map>
+
+#include "account.h"
+
 void* client_thread(void* arg);
 void* console_thread(void* arg);
+void setup_accounts();
+
+std::map<std::string, Account>* accounts;
 
 int main(int argc, char* argv[])
 {
@@ -22,6 +31,8 @@ int main(int argc, char* argv[])
 		printf("Usage: bank listen-port\n");
 		return -1;
 	}
+
+  setup_accounts();
 	
 	unsigned short ourport = atoi(argv[1]);
 	
@@ -128,6 +139,71 @@ void* console_thread(void* arg)
 		fgets(buf, 79, stdin);
 		buf[strlen(buf)-1] = '\0';	//trim off trailing newline
 		
-		//TODO: your input parsing code has to go here
+    std::string input(buf);
+    int first_space = input.find_first_of(' ');
+    if (first_space == input.npos || first_space == input.length() - 1)
+    {
+      std::cerr << "Malformed command\n";
+      continue;
+    }
+    std::string command = input.substr(0, first_space);
+
+    //DEPOSIT
+    if (command == "deposit")
+    {
+      int second_space = input.find_first_of(' ', first_space + 1);
+      if (second_space == input.npos || second_space == input.length() - 1)
+      {
+        std::cerr << "Malformed command\n";
+        continue;
+      }
+      std::string username = input.substr(first_space + 1, second_space - first_space - 1);
+
+      std::string amount_string = input.substr(second_space + 1,
+        input.length() - second_space);
+      double amount = atof(amount_string.c_str());
+      if (amount <= 0)
+      {
+        std::cerr << "Invlaid deposit amount\n";
+        continue;
+      }
+
+      std::map<std::string, Account>::iterator it;
+      it = accounts->find(username);
+      if (it == accounts->end())
+      {
+        std::cerr << "No such account\n";
+        continue;
+      }
+      it->second.deposit(amount);
+    }
+
+    //BALANCE
+    else if (command == "balance")
+    {
+      std::string username = input.substr(first_space + 1, input.length() - first_space);
+      
+      std::map<std::string, Account>::iterator it;
+      it = accounts->find(username);
+      if (it == accounts->end())
+      {
+        std::cerr << "No such account\n";
+        continue;
+      }
+
+      std::cout << it->second.get_balance() << std::endl;
+    }
+    else
+    {
+      std::cerr << "Unknown command\n";
+    }
 	}
+}
+
+void setup_accounts()
+{
+  accounts = new std::map<std::string, Account>();
+  accounts->insert(std::make_pair("Alice", Account("Alice", "1234", 100)));
+  accounts->insert(std::make_pair("Bob", Account("Bob", "7373", 50)));
+  accounts->insert(std::make_pair("Eve", Account("Eve", "1337", 0)));
 }
