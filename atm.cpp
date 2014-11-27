@@ -191,7 +191,7 @@ login | withdraw | balance | transfer | logout\n");
 			if( str.find("-1") == 0){
 				printf("User not found.\n");
 			}
-			else if( str.find("1") == 0) {
+			else if( str.find("0") == 0) {
 				printf("Please enter a PIN\n");
 				string pin;
 				getline(cin, pin); 
@@ -204,6 +204,8 @@ login | withdraw | balance | transfer | logout\n");
 					break;
 				if(receive(sock, length, packet) == -1)
 					break;
+				string str(packet);
+				cout << str << endl;
 			}
 				//Prompt for pin
 				//Try again

@@ -122,52 +122,52 @@ void* client_thread(void* arg)
     if (mid_login) {
       pin_ = str;
     }
-		else if(str.find("withdraw ") == 0) {
-			//takes in withdraw [amount]
-			int sec_space = str.find(" ", 9);
-			std::string temp = str.substr(9, sec_space);
+	else if(str.find("withdraw ") == 0) {
+		//takes in withdraw [amount]
+		int sec_space = str.find(" ", 9);
+		std::string temp = str.substr(9, sec_space);
 
-			//printf("%s withdrawn.\n", temp.c_str());
-			withdraw_ = true;
-			// user_ = somewhere in packet
-		}
-		else if(str.find("login ") == 0) {
-			//takes in login [username] [pin]
-			//Get PIN from Bank
-			//prompt for PIN
-			int sec_space = str.find(" ", 6);
-			user_ = str.substr(6, sec_space);
+		//printf("%s withdrawn.\n", temp.c_str());
+		withdraw_ = true;
+		// user_ = somewhere in packet
+	}
+	else if(str.find("login ") == 0) {
+		//takes in login [username] [pin]
+		//Get PIN from Bank
+		//prompt for PIN
+		int sec_space = str.find(" ", 6);
+		user_ = str.substr(6, sec_space);
 
-			printf("User %s is logging in.\n", user_.c_str());
-      printf("Pin %s\n", pin_.c_str());
+		printf("User %s is logging in.\n", user_.c_str());
+  		printf("Pin %s\n", pin_.c_str());
 
-			login_ = true;
-		}
-		else if(str.find("balance") == 0) {
-			printf("Checking Balance\n");
-			balance_ = true;
+		login_ = true;
+	}
+	else if(str.find("balance") == 0) {
+		printf("Checking Balance\n");
+		balance_ = true;
 
-		}
-		else if(str.find("transfer ") == 0) {
-			//takes in transfer [amount] [username]
-			int space = str.find(" ", 9);
-			std::string amount = str.substr(9, (space-9));
-			printf("amount %s\n", amount.c_str());
-			space = str.find(" ", 9+amount.size());
-			std::string destination = str.substr(space+1);
-			//printf("Transfering %s to %s.\n", amount.c_str(), destination.c_str());
-			
-			transfer_ = true;
-			user_ = destination;
-			amount_ = amount;
-		}
+	}
+	else if(str.find("transfer ") == 0) {
+		//takes in transfer [amount] [username]
+		int space = str.find(" ", 9);
+		std::string amount = str.substr(9, (space-9));
+		printf("amount %s\n", amount.c_str());
+		space = str.find(" ", 9+amount.size());
+		std::string destination = str.substr(space+1);
+		//printf("Transfering %s to %s.\n", amount.c_str(), destination.c_str());
+		
+		transfer_ = true;
+		user_ = destination;
+		amount_ = amount;
+	}
 
-		for(unsigned int i = 0; i < length; ++i) {
-			packet[i] = '\0';
-		}
+	for(unsigned int i = 0; i < length; ++i) {
+		packet[i] = '\0';
+	}
 
-    // -1 for non-existent account, 0 for continue
-		if(login_) {
+// -1 for non-existent account, 0 for continue
+	if(login_) {
       active_account = accounts->find(user_);
       if (active_account == accounts->end())
       {
@@ -179,13 +179,14 @@ void* client_thread(void* arg)
         packet[0] = '0';
         mid_login = true;
       }
-		}
+	}
     // -1 for bad pin, 0 for success
     else if(mid_login) {
       mid_login = false;
       if (active_account->second.validate(pin_)) {
         validated = true;
         packet[0] = '0';
+        std::cout << active_account->first << " is validated." << std::endl;
       }
       else {
         active_account = accounts->end();
