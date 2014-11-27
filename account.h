@@ -1,5 +1,5 @@
 #ifndef ACCOUNT_H
-#define ACCOUNT_h
+#define ACCOUNT_H
 
 #include <string>
 

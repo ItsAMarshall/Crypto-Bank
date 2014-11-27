@@ -2,12 +2,9 @@
 	@file atm.cpp
 	@brief Top level ATM implementation file
  */
-<<<<<<< HEAD
 #include <string>
 #include <iostream>
 #include <cassert>
-=======
->>>>>>> FETCH_HEAD
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -16,16 +13,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-<<<<<<< HEAD
 #include <ctype.h>
 
 using namespace std;
 
 void withdraw_function() {
 }
-
-=======
->>>>>>> FETCH_HEAD
 
 int main(int argc, char* argv[])
 {
@@ -59,7 +52,6 @@ int main(int argc, char* argv[])
 	
 	//input loop
 	char buf[80];
-<<<<<<< HEAD
 	string input;
 	while(1)
 	{
@@ -83,17 +75,30 @@ int main(int argc, char* argv[])
 			string temp = input.substr(9, sec_space);
 
 			printf("%s withdrawn.\n", temp.c_str());
+
+			for(unsigned int i = 0; i < input.size(); ++i) {
+				packet[i] = input[i];
+			}
 		}
 		else if(input.find("login ") == 0) {
 			//takes in login [username]
+			//Get PIN from Bank
 			//prompt for PIN
 			int sec_space = input.find(" ", 6);
 			string temp = input.substr(6, sec_space);
 
 			printf("User %s is logging in.\n", temp.c_str());
+
+			for(unsigned int i = 0; i < input.size(); ++i) {
+				packet[i] = input[i];
+			}
+
 		}
 		else if(input.find("balance") == 0) {
 			printf("Checking Balance\n");
+			for(unsigned int i = 0; i < input.size(); ++i) {
+				packet[i] = input[i];
+			}
 		}
 		else if(input.find("transfer ") == 0) {
 			//takes in transfer [amount] [username]
@@ -103,29 +108,15 @@ int main(int argc, char* argv[])
 			space = input.find(" ", 9+amount.size());
 			string destination = input.substr(space+1);
 			printf("Transfering %s to %s.\n", amount.c_str(), destination.c_str());
+
+			for(unsigned int i = 0; i < input.size(); ++i) {
+				packet[i] = input[i];
+			}
 		}
 		else {
 			printf("invalid input.  Valid operations are:\n \
 login | withdraw | balance | transfer | logout\n");
 		}
-
-
-=======
-	while(1)
-	{
-		printf("atm> ");
-		fgets(buf, 79, stdin);
-		buf[strlen(buf)-1] = '\0';	//trim off trailing newline
-		
-		//TODO: your input parsing code has to put data here
-		char packet[1024];
-		int length = 1;
-		
-		//input parsing
-		if(!strcmp(buf, "logout"))
-			break;
->>>>>>> FETCH_HEAD
-		//TODO: other commands
 		
 		//send the packet through the proxy to the bank
 		if(sizeof(int) != send(sock, &length, sizeof(int), 0))
