@@ -222,6 +222,10 @@ void* client_thread(void* arg)
 
   }
 
+  if (active_account != accounts->end())
+  {
+    active_account->second.logout();
+  }
   printf("[bank] client ID #%d disconnected\n", csock);
 
   close(csock);
