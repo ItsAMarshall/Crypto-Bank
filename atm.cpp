@@ -15,7 +15,13 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <cryptopp/osrng.h>
+#include <cryptopp/rsa.h>
+#include <cryptopp/aes.h>
+#include <cryptopp/modes.h>
+
 using namespace std;
+using namespace CryptoPP;
 
 void withdraw_send(string& input, char packet[]) {
 
@@ -128,6 +134,74 @@ int main(int argc, char* argv[])
     return -1;
   }
 
+  //ENCRYPTION SETUP
+  //Generate random AES private key and IV
+  AutoSeededRandomPool pool;
+  int aes_key_size = 32;
+  SecByteBlock aes_key(0x00, aes_key_size);
+  pool.GenerateBlock(aes_key, aes_key_size);
+  byte aes_iv[AES::BLOCKSIZE];
+  pool.GenerateBlock(aes_iv, AES::BLOCKSIZE);
+
+  //Get public RSA key
+  unsigned char* prepacket = new unsigned char[1024];
+  if (recv(sock, prepacket, 1024, 0) <= 0)
+  {
+    printf("[atm] Failed to receive public key\n");
+    return -1;
+  }
+  lword public_key_size;
+  memcpy(&public_key_size, prepacket, 8);
+
+  //Instantiate RSA public key
+  ByteQueue queue;
+  queue.Put(prepacket + 8, public_key_size);
+  RSA::PublicKey rsa_public;
+  rsa_public.Load(queue);
+  RSAES_OAEP_SHA_Encryptor rsa_encryptor(rsa_public);
+
+  //Encrypt AES private key and IV with RSA
+  int rsa_pt_size = aes_key_size + AES::BLOCKSIZE;
+  SecByteBlock rsa_pt(rsa_pt_size);
+  memcpy(rsa_pt.BytePtr(), aes_key.BytePtr(), aes_key_size);
+  memcpy(rsa_pt.BytePtr() + aes_key_size, aes_iv, AES::BLOCKSIZE);
+  size_t rsa_ct_size = rsa_encryptor.CiphertextLength(rsa_pt_size);
+  SecByteBlock rsa_ct(rsa_ct_size);
+  rsa_encryptor.Encrypt(pool, rsa_pt, rsa_pt_size, rsa_ct);
+
+  // Send AES creds
+  memcpy(prepacket, rsa_ct.BytePtr(), rsa_ct_size);
+  if (send(sock, prepacket, rsa_ct_size, 0) != rsa_ct_size)
+  {
+    printf("[atm] Failed to send AES creds\n");
+    return -1;
+  }
+
+  // Verify AES functionality
+  CFB_Mode<AES>::Encryption aes_encryption(aes_key, aes_key_size, aes_iv);
+  CFB_Mode<AES>::Decryption aes_decryption(aes_key, aes_key_size, aes_iv);
+  byte msg_ping[5] = {'P', 'I', 'N', 'G', '\0'};
+  byte msg_pong[5] = {'P', 'O', 'N', 'G', '\0'}; 
+  byte aes_data[1024];
+  int data_len = recv(sock, aes_data, 1024, 0);
+  if (data_len <= 0)
+  {
+    printf("[atm] Failed to get ping; AES failed\n");
+    return -1;
+  }
+  aes_decryption.ProcessData(aes_data, aes_data, data_len);
+  if (memcmp(aes_data, msg_ping, 5) != 0)
+  {
+    printf("[atm] Failed to decrypt ping; AES failed\n");
+    return -1;
+  }
+  aes_encryption.ProcessData(msg_pong, msg_pong, 5);
+  if (send(sock, msg_pong, 5, 0) != 5) {
+    printf("[atm] Failed to send pong; AES failed\n");
+    return -1;
+  }
+  printf("[atm] AES set up successfully\n");
+
   //input loop
   char buf[80];
   string input;
@@ -138,7 +212,6 @@ int main(int argc, char* argv[])
     //fgets(buf, 79, stdin);
     //buf[strlen(buf)-1] = '\0';	//trim off trailing newline
     getline(cin, input);
-    //TODO: your input parsing code has to put data here
     char packet[1024];
     int length = input.size();
     //char command[8];
@@ -169,18 +242,34 @@ int main(int argc, char* argv[])
       continue;
     }
 
-    if (send(sock, length, packet) == -1)
+    // AES encrypt and send
+    char buff[1024];
+    memcpy(buff, input.c_str(), input.length());
+    buff[input.length()] = 0;
+    aes_encryption.ProcessData((byte*)buff, (byte*)buff, input.length() + 1);
+    /*if (send(sock, length, packet) == -1)
+      break;*/
+    if (send(sock, packet, length, 0) <= 0)
+    {
       break;
+    }
 
     for(unsigned int i = 0; i < input.size(); ++i) {
       packet[i] = '\0';
     }
 
-    if(receive(sock, length, packet) == -1)
+    // Receive and AES decrypt
+    int data_len;
+    /*if((data_len = receive(sock, length, packet)) == -1)
+      break;*/
+    if ((data_len = recv(sock, packet, 1024, 0)) <= 0)
+    {
       break;
+    }
+    aes_decryption.ProcessData((byte*)packet, (byte*)packet, data_len);
 
     string str(packet);
-    cout << str << endl;
+    cout << "packet='" << str << "'\n";
 
     /////////
 
@@ -206,10 +295,21 @@ int main(int argc, char* argv[])
         for(unsigned int i = 0; i < 4; ++i) {
           packet[i] = pin[i];
         }
-        if(send(sock, pin.size(), packet) == -1)
+        packet[4] = '\0';
+        aes_encryption.ProcessData((byte*)packet, (byte*)packet, 5);
+        /*if(send(sock, pin.size() + 1, packet) == -1)
           break;
-        if(receive(sock, length, packet) == -1)
+        if((data_len = receive(sock, length, packet)) == -1)
+          break;*/
+        if (send(sock, packet, pin.size() + 1, 0) <= 0)
+        {
           break;
+        }
+        if ((data_len = recv(sock, packet, 1024, 0)) <= 0)
+        {
+          break;
+        }
+        aes_decryption.ProcessData((byte*)packet, (byte*)packet, data_len);
         string str(packet);
         cout << str << endl;
         if (str[0] == '0') {

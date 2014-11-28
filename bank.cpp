@@ -17,13 +17,24 @@
 #include <map>
 #include <sstream>
 
+#include <cryptopp/rsa.h>
+#include <cryptopp/osrng.h>
+#include <cryptopp/aes.h>
+#include <cryptopp/modes.h>
+
 #include "account.h"
+
+using namespace CryptoPP;
 
 void* client_thread(void* arg);
 void* console_thread(void* arg);
 void setup_accounts();
 
 std::map<std::string, Account>* accounts;
+RSA::PrivateKey* rsa_private;
+lword public_key_size;
+byte* public_key_buff;
+AutoSeededRandomPool* pool;
 
 int main(int argc, char* argv[])
 {
@@ -33,7 +44,23 @@ int main(int argc, char* argv[])
     return -1;
   }
 
+  // Set up pre-existing accounts
   setup_accounts();
+
+  // Set up encryption
+  printf("Generating RSA keys...\n");
+  pool = new AutoSeededRandomPool();
+  InvertibleRSAFunction rsa_params;
+  rsa_params.GenerateRandomWithKeySize(*pool, 4096);
+  rsa_private = new RSA::PrivateKey(rsa_params);
+  RSA::PublicKey rsa_public(rsa_params);
+
+  ByteQueue queue;
+  rsa_public.Save(queue);
+  public_key_size = queue.TotalBytesRetrievable();
+  public_key_buff = new byte[public_key_size];
+  queue.Get(public_key_buff, public_key_size);
+  printf("Key generation complete.\n");
 
   unsigned short ourport = atoi(argv[1]);
 
@@ -87,6 +114,63 @@ void* client_thread(void* arg)
   int csock = (int)arg;
 
   printf("[bank] client ID #%d connected\n", csock);
+
+  //ENCRYPTION SETUP
+  //Send client the RSA public key
+  //Format: [8 bytes: key length] [~500 bytes: public key]
+  byte* prepacket = new byte[1024];
+  memcpy(prepacket, &public_key_size, 8);
+  memcpy(prepacket + 8, public_key_buff, public_key_size);
+  if (send(csock, prepacket, 1024, 0) != 1024) {
+    printf("[bank] Failed to send public key\n");
+    return 0;
+  }
+
+  //Receive the AES private key and IV
+  //Format: (RSA encrypted) [32 bytes: AES key] [16 bytes: IV]
+  int rsa_ct_size = recv(csock, prepacket, 1024, 0);
+  if (rsa_ct_size <= 0) {
+    printf("[bank] Failed to receive AES creds\n");
+    return 0;
+  }
+  RSAES_OAEP_SHA_Decryptor rsa_decryptor(*rsa_private);
+  int rsa_pt_size = rsa_decryptor.MaxPlaintextLength(rsa_ct_size);
+  SecByteBlock rsa_pt(rsa_pt_size);
+  DecodingResult rsa_decode_result = 
+      rsa_decryptor.Decrypt(*pool, prepacket, rsa_ct_size, rsa_pt);
+  if (!rsa_decode_result.isValidCoding) {
+    printf("[bank] Failed to decrypt RSA message\n");
+    return 0;
+  }
+  int aes_key_size = 32;
+  SecByteBlock aes_key(0x00, aes_key_size);
+  memcpy(aes_key.BytePtr(), rsa_pt.BytePtr(), aes_key_size);
+  byte aes_iv[AES::BLOCKSIZE];
+  memcpy(aes_iv, rsa_pt.BytePtr() + aes_key_size, AES::BLOCKSIZE);
+
+  // Verify AES functionality
+  CFB_Mode<AES>::Encryption aes_encryption(aes_key, aes_key_size, aes_iv);
+  CFB_Mode<AES>::Decryption aes_decryption(aes_key, aes_key_size, aes_iv);
+  byte msg_ping[5] = {'P', 'I', 'N', 'G', '\0'};
+  byte msg_pong[5] = {'P', 'O', 'N', 'G', '\0'};
+  aes_encryption.ProcessData(msg_ping, msg_ping, 5);
+  if (send(csock, msg_ping, 5, 0) != 5) {
+    printf("[bank] Failed to send ping; AES failed\n");
+    return 0;
+  }
+  byte aes_data[1024];
+  int data_len = recv(csock, aes_data, 1024, 0);
+  if (data_len <= 0) {
+    printf("[bank] Failed to get pong; AES failed\n");
+    return 0;
+  }
+  aes_decryption.ProcessData(aes_data, aes_data, data_len);
+  if (memcmp(aes_data, msg_pong, 5) != 0) {
+    printf("[bank] Failed to decrypt pong; AES failed\n");
+    return 0;
+  }
+  printf("[bank] AES set up successfully\n");
+
   bool withdraw_, balance_, login_, transfer_;
   bool mid_login = false, validated = false;
   std::string user_, amount_, pin_;
@@ -100,22 +184,30 @@ void* client_thread(void* arg)
     balance_ = false;
     login_ = false;
     transfer_ = false;
-    //read the packet from the ATM
-    if(sizeof(int) != recv(csock, &length, sizeof(int), 0))
+    //read the packet from the ATM and AES decrypt
+    /*if(sizeof(int) != recv(csock, &length, sizeof(int), 0))
       break;
     if(length >= 1024)
     {
       printf("packet too long\n");
       break;
-    }
-    if(length != recv(csock, packet, length, 0))
+    }*/
+    /*if(length != recv(csock, packet, length, 0))
+    {
+      printf("[bank] fail to read packet\n");
+      break;
+    }*/
+    int data_len;
+    if((data_len = recv(csock, packet, 1024, 0)) <= 0)
     {
       printf("[bank] fail to read packet\n");
       break;
     }
+    aes_decryption.ProcessData((byte*)packet, (byte*)packet, data_len);
 
     //convert packet to string to be parsed
     std::string str(packet);
+    printf("packet='%s'\n", str.c_str());
 
     //determine the command type
 
@@ -242,8 +334,8 @@ void* client_thread(void* arg)
     }
 
 
-
-    //send the new packet back to the client
+    //encrypt the packet and send it back to the client
+    aes_encryption.ProcessData((byte*)packet, (byte*)packet, length);
     if(sizeof(int) != send(csock, &length, sizeof(int), 0))
     {
       printf("[bank] fail to send packet length\n");
