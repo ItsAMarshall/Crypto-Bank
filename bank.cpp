@@ -126,11 +126,10 @@ void* client_thread(void* arg)
     else if(str.find("withdraw ") == 0) {
       //takes in withdraw [amount]
       int sec_space = str.find(" ", 9);
-      std::string temp = str.substr(9, sec_space);
+      amount_ = str.substr(9, sec_space);
 
       //printf("%s withdrawn.\n", temp.c_str());
       withdraw_ = true;
-      // user_ = somewhere in packet
     }
     else if(str.find("login ") == 0) {
       //takes in login [username] [pin]
@@ -205,7 +204,19 @@ void* client_thread(void* arg)
         std::string balance_string = ss.str();
         memcpy(packet, balance_string.c_str(), balance_string.length());
       }
+      else if(withdraw_) {
+      	double value = atof(amount_.c_str());
+      	bool complete = active_account->second.withdraw(value);
+      	if( complete) {
+      		packet[0] = '0';
+      	}
+      	else {
+      		packet[0] = '-';
+      		packet[1] = '1';
+      	}
+      }
     }
+
 
 
     //send the new packet back to the client

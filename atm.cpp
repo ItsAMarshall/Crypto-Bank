@@ -185,7 +185,12 @@ int main(int argc, char* argv[])
     /////////
 
     if(input.find("withdraw ") == 0) {
-      //Successful or not 
+      if( str.find("-1") == 0){
+        printf("Could not withdraw funds.\n");
+      }
+      else if( str.find("0") == 0) {
+      	printf("Withdrew funds.\n");
+      }
     }
     else if(input.find("login ") == 0) {
       //Is user?

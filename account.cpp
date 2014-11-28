@@ -43,6 +43,11 @@ bool Account::withdraw(double amount)
     return false;
   }
 
+  if (amount <= 0)
+  {
+    return false;
+  }
+
   balance -= amount;
 
   return true;
