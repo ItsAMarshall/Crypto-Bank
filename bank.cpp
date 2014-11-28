@@ -55,6 +55,7 @@ int main(int argc, char* argv[])
   rsa_private = new RSA::PrivateKey(rsa_params);
   RSA::PublicKey rsa_public(rsa_params);
 
+  // Store public key in memory; may be used by multiple connections
   ByteQueue queue;
   rsa_public.Save(queue);
   public_key_size = queue.TotalBytesRetrievable();
@@ -149,6 +150,8 @@ void* client_thread(void* arg)
   memcpy(aes_iv, rsa_pt.BytePtr() + aes_key_size, AES::BLOCKSIZE);
 
   // Verify AES functionality
+  // PING -->
+  // <-- PONG
   CFB_Mode<AES>::Encryption aes_encryption(aes_key, aes_key_size, aes_iv);
   CFB_Mode<AES>::Decryption aes_decryption(aes_key, aes_key_size, aes_iv);
   byte msg_ping[5] = {'P', 'I', 'N', 'G', '\0'};
@@ -184,19 +187,6 @@ void* client_thread(void* arg)
     balance_ = false;
     login_ = false;
     transfer_ = false;
-    //read the packet from the ATM and AES decrypt
-    /*if(sizeof(int) != recv(csock, &length, sizeof(int), 0))
-      break;
-    if(length >= 1024)
-    {
-      printf("packet too long\n");
-      break;
-    }*/
-    /*if(length != recv(csock, packet, length, 0))
-    {
-      printf("[bank] fail to read packet\n");
-      break;
-    }*/
     int data_len;
     if((data_len = recv(csock, packet, 1024, 0)) <= 0)
     {
@@ -245,7 +235,6 @@ void* client_thread(void* arg)
       printf("amount %s\n", amount.c_str());
       space = str.find(" ", 9+amount.size());
       std::string destination = str.substr(space+1);
-      //printf("Transfering %s to %s.\n", amount.c_str(), destination.c_str());
 
       transfer_ = true;
       user_ = destination;
@@ -334,11 +323,6 @@ void* client_thread(void* arg)
     packet[response.length()] = '\0';
     length = response.length() + 1;
     aes_encryption.ProcessData((byte*)packet, (byte*)packet, length);
-    /*if(sizeof(int) != send(csock, &length, sizeof(int), 0))
-    {
-      printf("[bank] fail to send packet length\n");
-      break;
-    }*/
     if(length != send(csock, (void*)packet, length, 0))
     {
       printf("[bank] fail to send packet\n");

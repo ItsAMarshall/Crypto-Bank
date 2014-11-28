@@ -70,40 +70,6 @@ void transfer_send(string& input, char packet[]) {
   }
 }
 
-int send(int sock, int length, char packet[]) {
-  //send the packet through the proxy to the bank
-  if(sizeof(int) != send(sock, &length, sizeof(int), 0))
-  {
-    printf("fail to send packet length\n");
-    return -1;
-  }
-  if(length != send(sock, (void*)packet, length, 0))
-  {
-    printf("fail to send packet\n");
-    return -1;
-  }
-  return 0;
-}
-
-int receive(int sock, int length, char packet[]) {
-  if(sizeof(int) != recv(sock, &length, sizeof(int), 0))
-  {
-    printf("fail to read packet length\n");
-    return -1;
-  }
-  if(length >= 1024)
-  {
-    printf("packet too long\n");
-    return -1;
-  }
-  if(length != recv(sock, packet, length, 0))
-  {
-    printf("fail to read packet\n");
-    return -1;
-  }
-  return 0;
-}
-
 int main(int argc, char* argv[])
 {
   if(argc != 2)
@@ -209,13 +175,9 @@ int main(int argc, char* argv[])
   while(1)
   {
     printf("atm> ");
-    //fgets(buf, 79, stdin);
-    //buf[strlen(buf)-1] = '\0';	//trim off trailing newline
     getline(cin, input);
     char packet[1024];
     int length = input.size();
-    //char command[8];
-    //strncpy(command, buf, 8);
 
     //input parsing
     if(input.find("logout") == 0)
@@ -247,8 +209,6 @@ int main(int argc, char* argv[])
     memcpy(buff, input.c_str(), input.length());
     buff[input.length()] = 0;
     aes_encryption.ProcessData((byte*)buff, (byte*)buff, input.length() + 1);
-    /*if (send(sock, length, packet) == -1)
-      break;*/
     if (send(sock, buff, input.length() + 1, 0) <= 0)
     {
       break;
@@ -260,8 +220,6 @@ int main(int argc, char* argv[])
 
     // Receive and AES decrypt
     int data_len;
-    /*if((data_len = receive(sock, length, packet)) == -1)
-      break;*/
     if ((data_len = recv(sock, packet, 1024, 0)) <= 0)
     {
       break;
@@ -295,10 +253,6 @@ int main(int argc, char* argv[])
         }
         packet[4] = '\0';
         aes_encryption.ProcessData((byte*)packet, (byte*)packet, 5);
-        /*if(send(sock, pin.size() + 1, packet) == -1)
-          break;
-        if((data_len = receive(sock, length, packet)) == -1)
-          break;*/
         if (send(sock, packet, pin.size() + 1, 0) <= 0)
         {
           break;
@@ -317,8 +271,6 @@ int main(int argc, char* argv[])
           cout << "Failed to log in with given PIN\n";
         }
       }
-      //Prompt for pin
-      //Try again
     }
     else if(input.find("balance") == 0) {
       cout << "Your balance is $" << str << endl;
