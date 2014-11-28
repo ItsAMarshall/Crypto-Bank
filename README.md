@@ -15,3 +15,13 @@ TODO
 We have to have the current user as a field in each packet so the bank knows who it is.
 Once communication between ATM and Bank is working we have to encrypt it.  
 	Might have proxy do some shuffling?
+
+
+
+ENCRYPTION
+- Bank generates public/private key pair
+[Client connects]
+- Bank sends client public key
+- Client generates random private AES key
+- Client encrypts AES key with public RSA key and sends to bank
+[Bank and client communicate using AES]
