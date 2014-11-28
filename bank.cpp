@@ -174,6 +174,12 @@ void* client_thread(void* arg)
   }
   printf("[bank] AES set up successfully\n");
 
+  // Send garbage message to maintain back and forth
+  if (send(csock, msg_ping, 5, 0) != 5) {
+    printf("[bank] Failed to ack\n");
+    return 0;
+  }
+
   bool withdraw_, balance_, login_, transfer_;
   bool mid_login = false, validated = false;
   std::string user_, amount_, pin_;

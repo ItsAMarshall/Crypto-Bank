@@ -167,6 +167,10 @@ int main(int argc, char* argv[])
     return -1;
   }
   printf("[atm] AES set up successfully\n");
+  if (recv(sock, prepacket, 1024, 0) <= 0) {
+    printf("[atm] Failed to receive ack\n");
+    return -1;
+  }
 
   //input loop
   char buf[80];

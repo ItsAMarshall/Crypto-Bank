@@ -101,46 +101,9 @@ void* client_thread(void* arg)
 	char packet[1024];
 	while(1)
 	{
-		//read the packet from the ATM
-		if(sizeof(int) != recv(csock, &length, sizeof(int), 0))
-			break;
-		if(length >= 1024)
-		{
-			printf("packet too long\n");
-			break;
-		}
-		if(length != recv(csock, packet, length, 0))
-		{
-			printf("[proxy] fail to read packet\n");
-			break;
-		}
-		
-		//TODO: tamper with packet going from ATM to bank
-		
-		//forward packet to bank
-		if(sizeof(int) != send(bsock, &length, sizeof(int), 0))
-		{
-			printf("[proxy] fail to send packet length\n");
-			break;
-		}
-		if(length != send(bsock, (void*)packet, length, 0))
-		{
-			printf("[proxy] fail to send packet\n");
-			break;
-		}
 		
 		//get response packet from bank
-		if(sizeof(int) != recv(bsock, &length, sizeof(int), 0))
-		{
-			printf("[proxy] fail to read packet length\n");
-			break;
-		}
-		if(length >= 1024)
-		{
-			printf("packet too long\n");
-			break;
-		}
-		if(length != recv(bsock, packet, length, 0))
+		if((length = recv(bsock, packet, 1024, 0)) <= 0)
 		{
 			printf("[proxy] fail to read packet\n");
 			break;
@@ -149,12 +112,23 @@ void* client_thread(void* arg)
 		//TODO: tamper with packet going from bank to ATM
 
 		//forward packet to ATM
-		if(sizeof(int) != send(csock, &length, sizeof(int), 0))
+		if(length != send(csock, (void*)packet, length, 0))
 		{
-			printf("[proxy] fail to send packet length\n");
+			printf("[proxy] fail to send packet\n");
 			break;
 		}
-		if(length != send(csock, (void*)packet, length, 0))
+
+		//read the packet from the ATM
+		if((length = recv(csock, packet, 1024, 0)) <= 0)
+		{
+			printf("[proxy] fail to read packet\n");
+			break;
+		}
+		
+		//TODO: tamper with packet going from ATM to bank
+		
+		//forward packet to bank
+		if(length != send(bsock, (void*)packet, length, 0))
 		{
 			printf("[proxy] fail to send packet\n");
 			break;
