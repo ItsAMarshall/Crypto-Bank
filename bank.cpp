@@ -215,6 +215,30 @@ void* client_thread(void* arg)
       		packet[1] = '1';
       	}
       }
+      else if(transfer_) {
+        bool success = false;
+
+        // Find the other user
+        std::map<std::string, Account>::iterator other_account;
+        other_account = accounts->find(user_);
+        if (other_account != accounts->end()) {
+          // Parse the amount
+          double amount = atof(amount_.c_str());
+          if (amount > 0) {
+            // Try to withdraw
+            if (active_account->second.withdraw(amount)) {
+              other_account->second.deposit(amount);
+              packet[0] = '0';
+              success = true;
+            }
+          }
+        }
+
+        if (!success) {
+      		packet[0] = '-';
+      		packet[1] = '1';
+        }
+      }
     }
 
 

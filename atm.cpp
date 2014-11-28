@@ -227,7 +227,12 @@ int main(int argc, char* argv[])
       cout << "Your balance is $" << str << endl;
     }
     else if(input.find("transfer ") == 0) {
-      //Successful or not
+      if( str.find("-1") == 0){
+        printf("Could not transfer funds.\n");
+      }
+      else if( str.find("0") == 0) {
+      	printf("Funds transfered.\n");
+      }
     }
 
     /////////
