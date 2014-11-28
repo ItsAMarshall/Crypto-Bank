@@ -207,7 +207,6 @@ void* client_thread(void* arg)
 
     //convert packet to string to be parsed
     std::string str(packet);
-    printf("packet='%s'\n", str.c_str());
 
     //determine the command type
 
@@ -256,6 +255,7 @@ void* client_thread(void* arg)
     for(unsigned int i = 0; i < 1024; ++i) {
       packet[i] = '\0';
     }
+    std::string response;
 
     // -1 for non-existent account, 0 for continue
     if(login_) {
@@ -263,11 +263,10 @@ void* client_thread(void* arg)
       if (active_account == accounts->end())
       {
         std::cerr << "No such account\n";
-        packet[0] = '-';
-        packet[1] = '1';
+        response = "-1";
       }
       else {
-        packet[0] = '0';
+        response = "0";
         mid_login = true;
       }
     }
@@ -276,14 +275,13 @@ void* client_thread(void* arg)
       mid_login = false;
       if (active_account->second.validate(pin_)) {
         validated = true;
-        packet[0] = '0';
+        response = "0";
         std::cout << active_account->first << " is validated." << std::endl;
       }
       else {
         std::cout << active_account->first << " not validated; invalid pin" << std::endl;
         active_account = accounts->end();
-        packet[0] = '-';
-        packet[1] = '1';
+        response = "-1";
       }
     }
     // all other commands require the user to have been authenticated
@@ -293,18 +291,16 @@ void* client_thread(void* arg)
         double balance = active_account->second.get_balance();
         std::stringstream ss;
         ss << balance;
-        std::string balance_string = ss.str();
-        memcpy(packet, balance_string.c_str(), balance_string.length());
+        response = ss.str();
       }
       else if(withdraw_) {
       	double value = atof(amount_.c_str());
       	bool complete = active_account->second.withdraw(value);
       	if( complete) {
-      		packet[0] = '0';
+        response = "0";
       	}
       	else {
-      		packet[0] = '-';
-      		packet[1] = '1';
+        response = "-1";
       	}
       }
       else if(transfer_) {
@@ -320,27 +316,29 @@ void* client_thread(void* arg)
             // Try to withdraw
             if (active_account->second.withdraw(amount)) {
               other_account->second.deposit(amount);
-              packet[0] = '0';
+        response = "0";
               success = true;
             }
           }
         }
 
         if (!success) {
-      		packet[0] = '-';
-      		packet[1] = '1';
+        response = "-1";
         }
       }
     }
 
 
     //encrypt the packet and send it back to the client
+    memcpy(packet, response.c_str(), response.length());
+    packet[response.length()] = '\0';
+    length = response.length() + 1;
     aes_encryption.ProcessData((byte*)packet, (byte*)packet, length);
-    if(sizeof(int) != send(csock, &length, sizeof(int), 0))
+    /*if(sizeof(int) != send(csock, &length, sizeof(int), 0))
     {
       printf("[bank] fail to send packet length\n");
       break;
-    }
+    }*/
     if(length != send(csock, (void*)packet, length, 0))
     {
       printf("[bank] fail to send packet\n");

@@ -249,7 +249,7 @@ int main(int argc, char* argv[])
     aes_encryption.ProcessData((byte*)buff, (byte*)buff, input.length() + 1);
     /*if (send(sock, length, packet) == -1)
       break;*/
-    if (send(sock, packet, length, 0) <= 0)
+    if (send(sock, buff, input.length() + 1, 0) <= 0)
     {
       break;
     }
@@ -269,7 +269,6 @@ int main(int argc, char* argv[])
     aes_decryption.ProcessData((byte*)packet, (byte*)packet, data_len);
 
     string str(packet);
-    cout << "packet='" << str << "'\n";
 
     /////////
 
@@ -291,7 +290,6 @@ int main(int argc, char* argv[])
         string pin;
         getline(cin, pin); 
         assert(pin.size() == 4);
-        cout << pin << endl;
         for(unsigned int i = 0; i < 4; ++i) {
           packet[i] = pin[i];
         }
@@ -311,7 +309,6 @@ int main(int argc, char* argv[])
         }
         aes_decryption.ProcessData((byte*)packet, (byte*)packet, data_len);
         string str(packet);
-        cout << str << endl;
         if (str[0] == '0') {
           cout << "You are logged in\n";
           logged_in = true;
