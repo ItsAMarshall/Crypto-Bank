@@ -205,7 +205,6 @@ void* client_thread(void* arg)
 
     //convert packet to string to be parsed
     std::string str(packet);
-    std::cout << "packet='" << str << "'\n";
 
     //determine the command type
 

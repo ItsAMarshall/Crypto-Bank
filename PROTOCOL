@@ -1,0 +1,50 @@
+BANK SETUP
+-----------
+- The bank generates 4096-bit RSA keys
+
+ATM SETUP
+----------
+- The ATM generates a random 32-byte AES key and initialization vector (16-byte
+  blocks)
+
+KEY EXCHANGE
+-------------
+- Immediately after connection, the bank sends the ATM the RSA public key as
+  such:
+  [8 bytes: public key length] [public key]
+- The ATM prepares the AES credential data as such:
+  [32 bytes: AES key] [16 bytes: AES IV]
+- The ATM encrypts these AES credientals using the RSA public key and sends
+  them to the bank.
+- The bank decrypts and retrieves the AES credientials using its private RSA
+  key
+- The bank AES encrypts and sends "PING" (null-delimited)
+- The ATM verifies that it can decrypt "PING" and encrypts and sends "PONG"
+  (null-delimited)
+- The bank verifies that it can decrypt "PONG"
+- The bank sends any data to the ATM to maintain the back-and-forth pattern
+
+PROTOCOL
+---------
+Henceforth, all packets are 1024 bytes in size. Data is right-padded with
+null-bytes. Each packet is encrypted via the exchanged AES key. All
+commands/data are null-delimited. All numbers are sent as strings. 
+The following commands are available:
+- login [username] - initiates the login sequence for this username. Bank returns "0" if the
+  account exists or "-1" if it doesn't. If it does, the ATM sends the 4-digit
+  PIN string. If it is valid, the bank considers that session "logged in" to
+  that account and returns "0". Otherwise, it returns "-1".
+- (once logged in) balance - requests the account's balance. The bank returns
+  the balance to the ATM (e.g. "144.29").
+- (once logged in) withdraw [amount] - attempts to withdraw the given amount
+  from the logged in account. The amount format is the same as for the balance
+  commnand. If the number is not in a valid format or is greater than the
+  balance of the account, "-1" is returned. Otherwise, "0" is returned and the
+  amount is deducted from the account's balance.
+- (once logged in) transfer [amount] [username] - attempts to transfer the
+  given amount from the logged-in account to the account denoted by the given
+  username. The command fails if the amount is not a valid number or if the
+  amount is greater than the balance of the logged-in account or if the given
+  username does not match any account. If it fails, "-1" is returned. If it 
+  succeeds, the amount is withdrawn from the logged-in account, deposited into 
+  the specified account, and "0" is returned.
