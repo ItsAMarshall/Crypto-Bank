@@ -20,6 +20,9 @@
 #include <cryptopp/aes.h>
 #include <cryptopp/modes.h>
 
+
+#define PACKET_SIZE 1024
+
 using namespace std;
 using namespace CryptoPP;
 
@@ -180,7 +183,7 @@ int main(int argc, char* argv[])
   {
     printf("atm> ");
     getline(cin, input);
-    char packet[1024];
+    char packet[PACKET_SIZE];
     int length = input.size();
 
     //input parsing
@@ -209,11 +212,12 @@ int main(int argc, char* argv[])
     }
 
     // AES encrypt and send
-    char buff[1024];
+    char buff[PACKET_SIZE];
+    memset(buff, 0, PACKET_SIZE);
     memcpy(buff, input.c_str(), input.length());
     buff[input.length()] = 0;
-    aes_encryption.ProcessData((byte*)buff, (byte*)buff, input.length() + 1);
-    if (send(sock, buff, input.length() + 1, 0) <= 0)
+    aes_encryption.ProcessData((byte*)buff, (byte*)buff, PACKET_SIZE);
+    if (send(sock, buff, PACKET_SIZE, 0) <= 0)
     {
       break;
     }
@@ -224,7 +228,7 @@ int main(int argc, char* argv[])
 
     // Receive and AES decrypt
     int data_len;
-    if ((data_len = recv(sock, packet, 1024, 0)) <= 0)
+    if ((data_len = recv(sock, packet, PACKET_SIZE, 0)) <= 0)
     {
       break;
     }
@@ -252,16 +256,14 @@ int main(int argc, char* argv[])
         string pin;
         getline(cin, pin); 
         assert(pin.size() == 4);
-        for(unsigned int i = 0; i < 4; ++i) {
-          packet[i] = pin[i];
-        }
-        packet[4] = '\0';
-        aes_encryption.ProcessData((byte*)packet, (byte*)packet, 5);
-        if (send(sock, packet, pin.size() + 1, 0) <= 0)
+        memset(buff, 0, PACKET_SIZE);
+        memcpy(buff, pin.c_str(), 4);
+        aes_encryption.ProcessData((byte*)buff, (byte*)buff, PACKET_SIZE);
+        if (send(sock, buff, PACKET_SIZE, 0) <= 0)
         {
           break;
         }
-        if ((data_len = recv(sock, packet, 1024, 0)) <= 0)
+        if ((data_len = recv(sock, packet, PACKET_SIZE, 0)) <= 0)
         {
           break;
         }

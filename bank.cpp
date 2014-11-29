@@ -24,6 +24,8 @@
 
 #include "account.h"
 
+#define PACKET_SIZE 1024
+
 using namespace CryptoPP;
 
 void* client_thread(void* arg);
@@ -186,7 +188,7 @@ void* client_thread(void* arg)
   std::map<std::string, Account>::iterator active_account = accounts->end();
   //input loop
   int length;
-  char packet[1024];
+  char packet[PACKET_SIZE];
   while(1)
   {
     withdraw_ = false;
@@ -194,7 +196,7 @@ void* client_thread(void* arg)
     login_ = false;
     transfer_ = false;
     int data_len;
-    if((data_len = recv(csock, packet, 1024, 0)) <= 0)
+    if((data_len = recv(csock, packet, PACKET_SIZE, 0)) <= 0)
     {
       printf("[bank] fail to read packet\n");
       break;
@@ -203,6 +205,7 @@ void* client_thread(void* arg)
 
     //convert packet to string to be parsed
     std::string str(packet);
+    std::cout << "packet='" << str << "'\n";
 
     //determine the command type
 
@@ -327,9 +330,8 @@ void* client_thread(void* arg)
     //encrypt the packet and send it back to the client
     memcpy(packet, response.c_str(), response.length());
     packet[response.length()] = '\0';
-    length = response.length() + 1;
-    aes_encryption.ProcessData((byte*)packet, (byte*)packet, length);
-    if(length != send(csock, (void*)packet, length, 0))
+    aes_encryption.ProcessData((byte*)packet, (byte*)packet, PACKET_SIZE);
+    if(send(csock, (void*)packet, PACKET_SIZE, 0) <= 0)
     {
       printf("[bank] fail to send packet\n");
       break;
